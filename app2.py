@@ -8,23 +8,25 @@ import json
 import pytz
 import qrcode
 from io import BytesIO
-from dotenv import load_dotenv
-import os
 
 def get_database():
     uri = st.secrets["MONGODB_URI"]
-    client = MongoClient(uri, server_api=ServerApi('1'))
-    db = client["main_db"]
-    return db
-
+    try:
+        client = MongoClient(uri, server_api=ServerApi('1'))
+        db = client["main_db"]
+        return db
+    except Exception as e:
+        st.error(f"Error connecting to MongoDB: {str(e)}")
+        return None
 
 def validate_login(email, password):
     db = get_database()
-    collection = db["admins"]
-    user = collection.find_one({"email": email})
-    correct_password =  user['password']
-    if password == correct_password: 
-        return True    
+    if db:
+        collection = db["admins"]
+        user = collection.find_one({"email": email})
+        if user and user.get('password') == password:
+            return True
+    return False
 
 def generate_qr_code(data):
     qr = qrcode.QRCode(
@@ -118,19 +120,20 @@ def main():
 
                     # Insert data into MongoDB
                     db = get_database()
-                    collection = db["students"]
-                    collection.insert_one({
-                        "scan_date": data["scan_date"],
-                        "scan_time": data["scan_time"],
-                        "email": student_email
-                    })
+                    if db:
+                        collection = db["students"]
+                        collection.insert_one({
+                            "scan_date": data["scan_date"],
+                            "scan_time": data["scan_time"],
+                            "email": student_email
+                        })
 
                 st.info("You can only check in once per day")
 
             except json.JSONDecodeError:
                 st.error("Invalid JSON data in the URL.")
         else:
-            st.image(r"assets/img/lens_scan.png", width=300)
+            st.image("assets/img/lens_scan.png", width=300)
             st.error("Kindly Scan New QR Code from the Admin", icon="🚫")
 
 # Run the main function
