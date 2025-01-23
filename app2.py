@@ -11,22 +11,15 @@ from io import BytesIO
 from dotenv import load_dotenv
 import os
 
-
-# Function to get the database
+@st.cache_data()
 def get_database():
-    # Retrieve the MongoDB connection string from environment variables
-    uri = st.secrets["general"]["MONGODB_URI"]
-
-    # Create a new client and connect to the server
+    uri = st.secrets["MONGODB_URI"]
     client = MongoClient(uri, server_api=ServerApi('1'))
-
-    # Access the database and collection
     db = client["main_db"]
-
-    # Return the database
     return db
 
 
+@st.cache_data()
 def validate_login(email, password):
     db = get_database()
     collection = db["admins"]
@@ -35,7 +28,6 @@ def validate_login(email, password):
     if password == correct_password: 
         return True    
 
-# Function to generate QR code
 def generate_qr_code(data):
     qr = qrcode.QRCode(
         version=1,
