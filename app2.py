@@ -108,25 +108,25 @@ def main():
     elif page == "MARK MY ATTENDANCE":
         query_params = st.query_params
 
-        if "data" in query_params:
-            data_param = query_params["data"][0]
+        if "data" in query_params:  # Check if 'data' exists
+            data_param = query_params["data"]  # Directly get the value (assumed to be the only value)
             try:
-                decoded_data_param = unquote(data_param)
-                data = json.loads(decoded_data_param)
+                decoded_data_param = unquote(data_param)  # Decode URL-encoded string
+                data = json.loads(decoded_data_param)  # Convert JSON string to dictionary
 
+                # Process the data
                 student_email = st.text_input("Email address", placeholder="Enter your registered email address")
                 if st.button("Check-in"):
                     st.success("You have successfully checked in ✅")
 
                     # Insert data into MongoDB
                     db = get_database()
-                    if db:
-                        collection = db["students"]
-                        collection.insert_one({
-                            "scan_date": data["scan_date"],
-                            "scan_time": data["scan_time"],
-                            "email": student_email
-                        })
+                    collection = db["students"]
+                    collection.insert_one({
+                        "scan_date": data["scan_date"],
+                        "scan_time": data["scan_time"],
+                        "email": student_email
+                    })
 
                 st.info("You can only check in once per day")
 
