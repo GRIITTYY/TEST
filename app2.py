@@ -17,7 +17,7 @@ load_dotenv()
 # Function to get the database
 def get_database():
     # Retrieve the MongoDB connection string from environment variables
-    uri = os.get_env("MONGODB_URI")
+    uri = os.getenv("MONGODB_URI")
 
     # Create a new client and connect to the server
     client = MongoClient(uri, server_api=ServerApi('1'))
