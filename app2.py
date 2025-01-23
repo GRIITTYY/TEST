@@ -17,26 +17,26 @@ load_dotenv()
 # Function to get the database
 def get_database():
     # Retrieve the MongoDB connection string from environment variables
-    uri = os.getenv("MONGODB_URI", "Set URI Vraibale in .env file")
+    uri = os.get_env("MONGODB_URI")
 
     # Create a new client and connect to the server
     client = MongoClient(uri, server_api=ServerApi('1'))
 
-    # Access the database
-    db_name = os.getenv("MONGODB_DB_NAME")
-    db = client[db_name]
+    # Access the database and collection
+    db = client["main_db"]
 
     # Return the database
     return db
 
-# Function to validate login
+
+
 def validate_login(email, password):
     db = get_database()
     collection = db["admins"]
-    user = collection.find_one({"email": email}, {"_id": 0, "password": 1})
-    if user and user.get("password") == password:
-        return True
-    return False
+    user = collection.find_one({"email": email})
+    correct_password =  user['password']
+    if password == correct_password: 
+        return True    
 
 # Function to generate QR code
 def generate_qr_code(data):
