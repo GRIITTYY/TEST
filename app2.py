@@ -11,13 +11,11 @@ from io import BytesIO
 from dotenv import load_dotenv
 import os
 
-# Load environment variables from .env file
-load_dotenv()
 
 # Function to get the database
 def get_database():
     # Retrieve the MongoDB connection string from environment variables
-    uri = os.getenv("MONGODB_URI")
+    uri = st.secrets["general"]["MONGODB_URI"]
 
     # Create a new client and connect to the server
     client = MongoClient(uri, server_api=ServerApi('1'))
@@ -27,7 +25,6 @@ def get_database():
 
     # Return the database
     return db
-
 
 
 def validate_login(email, password):
