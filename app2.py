@@ -100,7 +100,7 @@ def main():
             json_data = json.dumps(data)
             encoded_json_data = quote(json_data)
 
-            url = f"https://testrepo.streamlit.app/?data={encoded_json_data}"
+            url = f"https://test-attendance.streamlit.app/?data={encoded_json_data}"
 
             qr_image = generate_qr_code(url)
             st.image(qr_image, caption="Scan this QR code to mark attendance", width=200)
