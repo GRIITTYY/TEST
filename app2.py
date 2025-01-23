@@ -11,7 +11,6 @@ from io import BytesIO
 from dotenv import load_dotenv
 import os
 
-@st.cache_data()
 def get_database():
     uri = st.secrets["MONGODB_URI"]
     client = MongoClient(uri, server_api=ServerApi('1'))
@@ -19,7 +18,6 @@ def get_database():
     return db
 
 
-@st.cache_data()
 def validate_login(email, password):
     db = get_database()
     collection = db["admins"]
