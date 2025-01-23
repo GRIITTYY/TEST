@@ -21,7 +21,7 @@ def get_database():
 
 def validate_login(email, password):
     db = get_database()
-    if db:
+    if db is not None:
         collection = db["admins"]
         user = collection.find_one({"email": email})
         if user and user.get('password') == password:
