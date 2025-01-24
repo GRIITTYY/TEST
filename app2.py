@@ -9,7 +9,9 @@ import pytz
 import qrcode
 from io import BytesIO
 import time
+from bcrypt import checkpw, hashpw, gensalt
 
+# MongoDB connection
 def get_database():
     uri = st.secrets["MONGODB_URI"]
     try:
@@ -20,15 +22,17 @@ def get_database():
         st.error(f"Error connecting to MongoDB: {str(e)}")
         return None
 
+# Validate login credentials (hashed password comparison)
 def validate_login(email, password):
     db = get_database()
     if db is not None:
         collection = db["admins"]
         user = collection.find_one({"email": email})
-        if user and user.get('password') == password:
+        if user and checkpw(password.encode('utf-8'), user.get('password').encode('utf-8')):
             return True
     return False
 
+# Generate QR code
 def generate_qr_code(data):
     qr = qrcode.QRCode(
         version=1,
@@ -48,6 +52,7 @@ def generate_qr_code(data):
 def main():
     st.title("Welcome")
 
+    # Sidebar menu
     with st.sidebar:
         page = option_menu(
             "Menu",
@@ -65,11 +70,16 @@ def main():
             st.session_state.logged_in = False
 
         if not st.session_state.logged_in:
-            # Display login form
+            # Login form
             st.subheader("Login")
-            email = st.text_input("Email")
-            if "email" in st.session_state and st.session_state.email:
-                email = st.session_state.email 
+            
+            if 'email' not in st.session_state:
+                email = st.text_input("Email")
+                if email:
+                    st.session_state.email = email  # Store email in session state once it's input
+            else:
+                email = st.session_state.email  # Use email from session if already set
+                
             password = st.text_input("Password", type="password")
             submit = st.button("Submit")
 
@@ -84,32 +94,38 @@ def main():
                 else:
                     st.warning("Please enter both email and password.", icon="❗")
         else:
-            # Display logout button and QR code
+            # Logout button and QR code generation
             col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8)
             with col8:
                 if st.button("Logout"):
                     st.session_state.logged_in = False
                     st.rerun()  # Rerun the app to update the UI
 
-            while True:
+            if st.button("Generate QR Code"):
                 now = datetime.now(pytz.timezone('Africa/Lagos'))
                 scan_date = now.strftime("%d-%m-%Y")
                 scan_time = now.strftime("%H:%M:%S")
 
+                # Fetch admin data
+                db = get_database()
+                admin_data = db["admins"].find_one({"email": email})
+                admin_id = admin_data.get("admin_id", "default_admin_id")
+                admin_location = admin_data.get("admin_location", "default_location")
+
                 data = {
                     "scan_date": scan_date,
                     "scan_time": scan_time,
-                    "admin_id": get_database()["admins"].find_one({"email": email}).get("admin_id"),
-                    "admin_location" : get_database()["admins"].find_one({"email": email}).get("admin_location")
+                    "admin_id": admin_id,
+                    "admin_location": admin_location
                 }
+
+                # Encode data and generate QR code URL
                 json_data = json.dumps(data)
                 encoded_json_data = quote(json_data)
-
                 url = f"https://test-attendance.streamlit.app/?data={encoded_json_data}"
 
                 qr_image = generate_qr_code(url)
                 st.image(qr_image, caption="Scan this QR code to mark attendance", width=200)
-                time.sleep(2)
 
     elif page == "MARK MY ATTENDANCE":
         query_params = st.query_params
@@ -131,18 +147,20 @@ def main():
                     now = datetime.now(pytz.timezone('Africa/Lagos'))
                     check_in_date = now.strftime("%d-%m-%Y")
                     check_in_time = now.strftime("%H:%M:%S")
-                    if db["students"].find_one({"scan_time": data["scan_time"]}):
-                        st.error("Kindly Scan New QR Code from the Admin", icon="🚫")
+                    
+                    # Check for duplicate check-ins
+                    if db["students"].find_one({"scan_date": data["scan_date"], "scan_time": data["scan_time"]}):
+                        st.error("You have already checked in today!", icon="🚫")
                     else:
                         collection.insert_one({
-                        "scan_date": data["scan_date"],
-                        "scan_time": data["scan_time"],
-                        "email": student_email,
-                        "check_in_date": check_in_date,
-                        "check_in_time": check_in_time,
-                        "admin_id": data["admin_id"],
-                        "location": data["admin_location"]
-                    })
+                            "scan_date": data["scan_date"],
+                            "scan_time": data["scan_time"],
+                            "email": student_email,
+                            "check_in_date": check_in_date,
+                            "check_in_time": check_in_time,
+                            "admin_id": data["admin_id"],
+                            "location": data["admin_location"]
+                        })
 
                 st.info("You can only check in once per day")
 
