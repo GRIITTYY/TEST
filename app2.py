@@ -9,9 +9,7 @@ import pytz
 import qrcode
 from io import BytesIO
 import time
-from bcrypt import checkpw, hashpw, gensalt
 
-# MongoDB connection
 def get_database():
     uri = st.secrets["MONGODB_URI"]
     try:
@@ -22,7 +20,6 @@ def get_database():
         st.error(f"Error connecting to MongoDB: {str(e)}")
         return None
 
-# Validate login credentials (hashed password comparison)
 def validate_login(email, password):
     db = get_database()
     if db is not None:
@@ -32,7 +29,6 @@ def validate_login(email, password):
             return True
     return False
 
-# Generate QR code
 def generate_qr_code(data):
     qr = qrcode.QRCode(
         version=1,
@@ -48,11 +44,10 @@ def generate_qr_code(data):
     img.save(buf)
     return buf.getvalue()
 
-# Main function
+
 def main():
     st.title("Welcome")
 
-    # Sidebar menu
     with st.sidebar:
         page = option_menu(
             "Menu",
@@ -70,15 +65,15 @@ def main():
             st.session_state.logged_in = False
 
         if not st.session_state.logged_in:
-            # Login form
+            
             st.subheader("Login")
             
             if 'email' not in st.session_state:
                 email = st.text_input("Email")
                 if email:
-                    st.session_state.email = email  # Store email in session state once it's input
+                    st.session_state.email = email
             else:
-                email = st.session_state.email  # Use email from session if already set
+                email = st.session_state.email
                 
             password = st.text_input("Password", type="password")
             submit = st.button("Submit")
@@ -88,25 +83,24 @@ def main():
                     if validate_login(email, password):
                         st.session_state.logged_in = True
                         st.success(f"Welcome {email}!")
-                        st.rerun()  # Rerun the app to update the UI
+                        st.rerun() 
                     else:
                         st.error("Invalid credentials. Please try again.", icon="❌")
                 else:
                     st.warning("Please enter both email and password.", icon="❗")
         else:
-            # Logout button and QR code generation
             col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8)
             with col8:
                 if st.button("Logout"):
                     st.session_state.logged_in = False
-                    st.rerun()  # Rerun the app to update the UI
+                    st.rerun() 
 
             if st.button("Generate QR Code"):
                 now = datetime.now(pytz.timezone('Africa/Lagos'))
                 scan_date = now.strftime("%d-%m-%Y")
                 scan_time = now.strftime("%H:%M:%S")
 
-                # Fetch admin data
+                
                 db = get_database()
                 admin_data = db["admins"].find_one({"email": st.session_state.email})
                 admin_id = admin_data.get("admin_id", "default_admin_id")
@@ -119,7 +113,7 @@ def main():
                     "admin_location": admin_location
                 }
 
-                # Encode data and generate QR code URL
+
                 json_data = json.dumps(data)
                 encoded_json_data = quote(json_data)
                 url = f"https://test-attendance.streamlit.app/?data={encoded_json_data}"
@@ -130,24 +124,21 @@ def main():
     elif page == "MARK MY ATTENDANCE":
         query_params = st.query_params
 
-        if "data" in query_params:  # Check if 'data' exists
-            data_param = query_params["data"]  # Directly get the value (assumed to be the only value)
+        if "data" in query_params: 
+            data_param = query_params["data"] 
             try:
-                decoded_data_param = unquote(data_param)  # Decode URL-encoded string
-                data = json.loads(decoded_data_param)  # Convert JSON string to dictionary
-
-                # Process the data
+                decoded_data_param = unquote(data_param)  
+                data = json.loads(decoded_data_param) 
+                
                 student_email = st.text_input("Email address", placeholder="Enter your registered email address")
                 st.button("Check-in")
                 if student_email and st.button:
-                    # Insert data into MongoDB
                     db = get_database()
                     collection = db["students"]
                     now = datetime.now(pytz.timezone('Africa/Lagos'))
                     check_in_date = now.strftime("%d-%m-%Y")
                     check_in_time = now.strftime("%H:%M:%S")
                     
-                    # Check for duplicate check-ins
                     if db["students"].find_one({"scan_date": data["scan_date"], "scan_time": data["scan_time"]}):
                         st.error("QR Code is INVALID or You have already checked in today!", icon="🚫")
                     else:
@@ -171,6 +162,5 @@ def main():
             st.image("assets/img/lens_scan.png", width=300)
             st.error("Kindly Scan New QR Code from the Admin", icon="🚫")
 
-# Run the main function
 if __name__ == "__main__":
     main()
