@@ -139,7 +139,7 @@ def main():
                 # Process the data
                 student_email = st.text_input("Email address", placeholder="Enter your registered email address")
                 st.button("Check-in")
-                if st.button:
+                if student_email and st.button:
                     # Insert data into MongoDB
                     db = get_database()
                     collection = db["students"]
