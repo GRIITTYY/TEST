@@ -138,9 +138,8 @@ def main():
 
                 # Process the data
                 student_email = st.text_input("Email address", placeholder="Enter your registered email address")
-                if st.button("Check-in"):
-                    st.success("You have successfully checked in ✅")
-
+                st.button("Check-in")
+                if st.button:
                     # Insert data into MongoDB
                     db = get_database()
                     collection = db["students"]
@@ -150,7 +149,7 @@ def main():
                     
                     # Check for duplicate check-ins
                     if db["students"].find_one({"scan_date": data["scan_date"], "scan_time": data["scan_time"]}):
-                        st.error("You have already checked in today!", icon="🚫")
+                        st.error("QR Code is INVALID or You have already checked in today!", icon="🚫")
                     else:
                         collection.insert_one({
                             "scan_date": data["scan_date"],
@@ -161,6 +160,8 @@ def main():
                             "admin_id": data["admin_id"],
                             "location": data["admin_location"]
                         })
+
+                        st.success("You have successfully checked in ✅")
 
                 st.info("You can only check in once per day")
 
