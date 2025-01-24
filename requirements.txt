@@ -3,3 +3,4 @@ streamlit_option_menu
 pytz
 python-dotenv
 pymongo
+bcrypt
