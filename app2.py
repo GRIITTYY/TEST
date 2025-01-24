@@ -68,6 +68,8 @@ def main():
             # Display login form
             st.subheader("Login")
             email = st.text_input("Email")
+            if "email" in st.session_state and st.session_state.email:
+                email = st.session_state.email 
             password = st.text_input("Password", type="password")
             submit = st.button("Submit")
 
