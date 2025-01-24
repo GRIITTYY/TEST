@@ -157,7 +157,8 @@ def main():
                 st.info("You can only check in once per day")
 
             except json.JSONDecodeError:
-                st.error("Invalid JSON data in the URL.")
+                st.image("assets/img/lens_scan.png", width=300)
+                st.error("Kindly Scan New QR Code from the Admin", icon="🚫")
         else:
             st.image("assets/img/lens_scan.png", width=300)
             st.error("Kindly Scan New QR Code from the Admin", icon="🚫")
