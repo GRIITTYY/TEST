@@ -28,7 +28,7 @@ def validate_login(email, password):
     if db is not None:
         collection = db["admins"]
         user = collection.find_one({"email": email})
-        if user and checkpw(password.encode('utf-8'), user.get('password').encode('utf-8')):
+        if user and user.get('password') == password:
             return True
     return False
 
