@@ -108,7 +108,7 @@ def main():
 
                 # Fetch admin data
                 db = get_database()
-                admin_data = db["admins"].find_one({"email": email})
+                admin_data = db["admins"].find_one({"email": st.session_state.email})
                 admin_id = admin_data.get("admin_id", "default_admin_id")
                 admin_location = admin_data.get("admin_location", "default_location")
 
