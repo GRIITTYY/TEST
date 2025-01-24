@@ -119,7 +119,7 @@ def main():
                 url = f"https://test-attendance.streamlit.app/?data={encoded_json_data}"
 
                 qr_image = generate_qr_code(url)
-                st.image(qr_image, caption="Scan this QR code to mark attendance", width=200)
+                st.image(qr_image, caption="Scan this QR code to mark your attendance", width=200)
 
     elif page == "MARK MY ATTENDANCE":
         query_params = st.query_params
