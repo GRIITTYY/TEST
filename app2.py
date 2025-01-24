@@ -8,6 +8,7 @@ import json
 import pytz
 import qrcode
 from io import BytesIO
+import time
 
 def get_database():
     uri = st.secrets["MONGODB_URI"]
@@ -88,22 +89,25 @@ def main():
                     st.session_state.logged_in = False
                     st.rerun()  # Rerun the app to update the UI
 
-            timezone = pytz.timezone('Africa/Lagos')
-            now = datetime.now(timezone)
-            scan_date = now.strftime("%d-%m-%Y")
-            scan_time = now.strftime("%H:%M:%S")
+            while True:
+                now = datetime.now(pytz.timezone('Africa/Lagos'))
+                scan_date = now.strftime("%d-%m-%Y")
+                scan_time = now.strftime("%H:%M:%S")
 
-            data = {
-                "scan_date": scan_date,
-                "scan_time": scan_time
-            }
-            json_data = json.dumps(data)
-            encoded_json_data = quote(json_data)
+                data = {
+                    "scan_date": scan_date,
+                    "scan_time": scan_time,
+                    "admin_id": get_database()["admins"].find_one({"email": email}).get("admin_id"),
+                    "admin_location" : get_database()["admins"].find_one({"email": email}).get("admin_location")
+                }
+                json_data = json.dumps(data)
+                encoded_json_data = quote(json_data)
 
-            url = f"https://test-attendance.streamlit.app/?data={encoded_json_data}"
+                url = f"https://test-attendance.streamlit.app/?data={encoded_json_data}"
 
-            qr_image = generate_qr_code(url)
-            st.image(qr_image, caption="Scan this QR code to mark attendance", width=200)
+                qr_image = generate_qr_code(url)
+                st.image(qr_image, caption="Scan this QR code to mark attendance", width=200)
+                time.sleep(2)
 
     elif page == "MARK MY ATTENDANCE":
         query_params = st.query_params
@@ -122,10 +126,20 @@ def main():
                     # Insert data into MongoDB
                     db = get_database()
                     collection = db["students"]
-                    collection.insert_one({
+                    now = datetime.now(pytz.timezone('Africa/Lagos'))
+                    check_in_date = now.strftime("%d-%m-%Y")
+                    check_in_time = now.strftime("%H:%M:%S")
+                    if db["students"].find_one({"scan_time": data["scan_time"]}):
+                        st.error("Kindly Scan New QR Code from the Admin", icon="🚫")
+                    else:
+                        collection.insert_one({
                         "scan_date": data["scan_date"],
                         "scan_time": data["scan_time"],
-                        "email": student_email
+                        "email": student_email,
+                        "check_in_date": check_in_date,
+                        "check_in_time": check_in_time,
+                        "admin_id": data["admin_id"],
+                        "location": data["admin_location"]
                     })
 
                 st.info("You can only check in once per day")
